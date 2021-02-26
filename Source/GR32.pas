@@ -41,7 +41,7 @@ unit GR32;
 interface
 
 {$I GR32.inc}
-
+{$DEFINE UseGR32PNG}
 uses
   {$IFDEF FPC} LCLIntf, LCLType, Types, {$ELSE}
   {$IFDEF COMPILERXE2_UP}UITypes, Types, {$ENDIF} Windows, {$ENDIF}
@@ -1118,6 +1118,10 @@ implementation
 uses
   Math, GR32_Blend, GR32_LowLevel, GR32_Math, GR32_Resamplers,
   GR32_Containers, GR32_Gamma, GR32_Backends, GR32_Backends_Generic,
+  {$IFDEF UseGR32PNG}
+  GR32_PNG, GR32_PortableNetworkGraphic,
+  {$ENDIF}
+
 {$IFDEF FPC}
   Clipbrd,
   {$IFDEF LCLWin32}
@@ -5938,6 +5942,22 @@ var
 begin
   SavePos := Stream.Position;
 
+  {$IFDEF UseGR32PNG}
+  if TPortableNetworkGraphic32.CanLoad(Stream) then
+  begin
+    with TPortableNetworkGraphic32.Create do
+    try
+      LoadFromStream(Stream);
+      AssignTo(Self);
+      Changed;
+    finally
+      Free;
+    end;
+    Exit;
+  end;
+  {$ENDIF}
+
+
   if (not LoadFromBMPStream(Stream, Stream.Size)) then
   begin
     Stream.Position := SavePos;
@@ -6039,6 +6059,21 @@ var
 begin
   FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
   try
+    {$IFDEF UseGR32PNG}
+    if TPortableNetworkGraphic32.CanLoad(FileStream) then
+    begin
+      with TPortableNetworkGraphic32.Create do
+      try
+        LoadFromStream(FileStream);
+        AssignTo(Self);
+        Changed;
+      finally
+        Free;
+      end;
+      Exit;
+    end;
+    {$ENDIF}
+
 
 {$ifdef COMPILERRX2_UP}
 
